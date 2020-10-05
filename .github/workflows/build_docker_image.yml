@@ -1,0 +1,130 @@
+---
+name: 'Build docker images'
+
+on:
+  push:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare_metadata:
+    name: "Prepare metadata"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare metadata
+        run: |
+          SHORTREF=${GITHUB_SHA::8}
+          TAGS=( $SHORTREF )
+
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            TAGS+=( $VERSION )
+          fi
+
+          if [[ $GITHUB_REF == refs/heads/master ]]; then
+            TAGS+=( latest )
+          fi
+
+          cat > _metadata.sh <<EOF
+          BASETAGS=( "${TAGS[@]}" )
+          VERSION=$VERSION
+          VCS_REF=$SHORTREF
+          EOF
+
+      - name: Upload metadata
+        uses: actions/upload-artifact@v2
+        with:
+          name: metadata
+          path: _metadata.sh
+
+  build_www_image:
+    name: 'Build www docker image'
+    needs: prepare_metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get metadata
+        uses: actions/download-artifact@v2
+        with:
+          name: metadata
+
+      - name: Prepare metadata
+        id: prep
+        run: |
+          . ./_metadata.sh
+
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/nipap-www
+          for tag in "${BASETAGS[@]}"; do
+            TAGS="${TAGS:+${TAGS},}${DOCKER_IMAGE}:$tag"
+          done
+
+          echo "::set-output name=tags::$TAGS"
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile.www
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
+
+  build_nipapd_image:
+    name: 'Build nipapd docker image'
+    needs: prepare_metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get metadata
+        uses: actions/download-artifact@v2
+        with:
+          name: metadata
+
+      - name: Prepare metadata
+        id: prep
+        run: |
+          . ./_metadata.sh
+
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/nipapd
+          for tag in "${BASETAGS[@]}"; do
+            TAGS="${TAGS:+${TAGS},}${DOCKER_IMAGE}:$tag"
+          done
+
+          echo "::set-output name=tags::$TAGS"
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile.nipapd
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
