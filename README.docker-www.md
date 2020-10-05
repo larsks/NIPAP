@@ -1,20 +1,13 @@
-## Build the image
-
-Build the docker image:
-
-```
-docker build -t nipap-www -f Dockerfile.www .
-```
-
 ## Configuration
 
 Most configuration variables are provided via environment variables.
-  NIPAPD_USERNAME     username to authenticate to nipapd
-  NIPAPD_PASSWORD     password to authenticate to nipapd
-  NIPAPD_HOST         host where nipapd is running [nipapd]
-  NIPAPD_PORT         port of nipapd [1337]
-  WWW_USERNAME        web UI username [guest]
-  WWW_PASSWORD        web UI password [guest]
+
+- `NIPAPD_USERNAME`: username to authenticate to nipapd
+- `NIPAPD_PASSWORD`: password to authenticate to nipapd
+- `NIPAPD_HOST`: host where nipapd is running [nipapd]
+- `NIPAPD_PORT`: port of nipapd [1337]
+- `WWW_USERNAME`: web UI username [guest]
+- `WWW_PASSWORD`: web UI password [guest]
 
 Some variables have a default, indicated in square brackets, the rest you need
 to fill in. If you are linking to a container running nipapd, just enter the
