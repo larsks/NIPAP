@@ -1,0 +1,33 @@
+## Building the image
+
+Build the docker image:
+
+```
+docker build -t nipapd -f Dockerfile.nipapd .
+```
+
+## Configuration
+
+Most configuration variables are provided via environment variables.
+  LISTEN_ADDRESS      address on which nipapd should listen [0.0.0.0]
+  LISTEN_PORT         port on which nipapd should listen [1337]
+  SYSLOG              true / false enable syslog? [false]
+  DB_HOST             host where database is running
+  DB_PORT             port of database [5432]
+  DB_NAME             name of database
+  DB_USERNAME         username to authenticate to database
+  DB_PASSWORD         password to authenticate to database
+  DB_SSLMODE          require ssl? [disable]
+  NIPAP_USERNAME      name of account to create
+  NIPAP_PASSWORD      password of account to create
+
+Some values have a default, indicated in square brackets, the rest you need
+to fill in. If you are linking to a container running postgres, just enter
+the name of the container as DB_HOST and use the credentials with which you
+started that container.
+
+NIPAP_USERNAME and NIPAP_PASSWORD are used to create a new account in the local
+auth database of nipapd so that you can later authenticate towards nipapd. It
+is only possible to add a single account. If you wish to add more accounts
+you should administrate the database outside and share it with the container
+via a volume.
